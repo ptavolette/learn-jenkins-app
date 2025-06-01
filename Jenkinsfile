@@ -58,7 +58,7 @@ pipeline {
                     # And need & at end to run server in background and not block subsequent steps
                     node_modules/.bin/serve -s build &
                     sleep 10
-                    npx playwright test --reporter:html
+                    npx playwright test --reporter=html
                 '''
             }
 
