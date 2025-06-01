@@ -26,6 +26,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Test stage"
+                    (ls build/index.html >> /dev/null 2>&1 && echo "yes") || echo "no"
                 '''
             }
         }
