@@ -28,40 +28,43 @@ pipeline {
                 '''
             }
         }
-        stage('Test') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
+        stage('Run All Tests') {
+            parallel {
+                stage('Unit Tests') {
+                    agent {
+                        docker {
+                            image 'node:18-alpine'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            echo "Test stage"
+                            (ls build/index.html >> /dev/null 2>&1 && echo "yes") || echo "no"
+                            test -f build/index.html
+                            npm test
+                        '''
+                    }
                 }
+                stage('E2E') {
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            npm install - serve
+                            # Need to provide path for serve binary
+                            # And need & at end to run server in background and not block subsequent steps
+                            node_modules/.bin/serve -s build &
+                            sleep 10
+                            npx playwright test --reporter=html
+                        '''
+                    }
+                }                
             }
-            steps {
-                sh '''
-                    echo "Test stage"
-                    (ls build/index.html >> /dev/null 2>&1 && echo "yes") || echo "no"
-                    test -f build/index.html
-                    npm test
-                '''
-            }
-        }
-        stage('E2E') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    npm install - serve
-                    # Need to provide path for serve binary
-                    # And need & at end to run server in background and not block subsequent steps
-                    node_modules/.bin/serve -s build &
-                    sleep 10
-                    npx playwright test --reporter=html
-                '''
-            }
-
         }
     }
 
